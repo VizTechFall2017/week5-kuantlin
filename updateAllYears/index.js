@@ -1,8 +1,8 @@
 var svg = d3.select('svg').append('g').attr('transform','translate(100,100)');
 
 //set up variables to hold two versions of the data, one for each year
-var data2016;
-var data2000;
+var nestedData = [];
+var yearData = [];
 
 //set up a tracker variable to watch the button click state
 var clicked = true;
@@ -25,7 +25,14 @@ svg.append("g")
 
 
 //import the data from the .csv file
-d3.csv('./incomeData.csv', function(dataIn){
+d3.csv('./incomeDataAllYears.csv', function(dataIn){
+
+    nestedData = d3.nest()
+        .key(function(d){return d.year})
+        .entries(dataIn);
+
+    console.log(nestedData);
+
 
     //This is a JS filter, which is really a fancy for loop. It takes the original array (dataIn), and the filter() function goes
     //through each item in the array and checks it for something. The "something" is defined by an anonymous function function(d){},
@@ -63,13 +70,7 @@ d3.csv('./incomeData.csv', function(dataIn){
         .attr('transform', 'translate(-50,250)rotate(270)');
 
     //bind the data to the d3 selection, but don't draw it yet
-    svg.selectAll('circles')
-        .data(data2016)
-        .enter()
-        .append('circle')
-        .attr('class','w_dataPoints')
-        .attr('r', 5)
-        .attr('fill', "lime");
+
 
     svg.selectAll('circles')
         .data(data2016)
@@ -88,14 +89,6 @@ d3.csv('./incomeData.csv', function(dataIn){
 //without adding more circles each time.
 function drawPoints(pointData){
 
-    svg.selectAll('.w_dataPoints')  //select all of the circles with dataPoints class that we made using the enter() commmand above
-        .data(pointData)          //re-attach them to data (necessary for when the data changes from 2016 to 2017)
-        .attr('cx',function(d){   //look up values for all the attributes that might have changed, and draw the new circles
-            return scaleX(d.age);
-        })
-        .attr('cy',function(d){
-            return scaleY(d.women);
-        });
 
     svg.selectAll('.m_dataPoints')  //do the same for the men's data series
         .data(pointData)
@@ -107,19 +100,38 @@ function drawPoints(pointData){
         });
 }
 
-//this function runs when the HTML button is clicked.
-function buttonClicked(){
+function updateData(selectedYear){
+    return nestedData.filter(function(d){
+        return d.key == selectedYear
+    })[0].values
 
-    //check to see whether the tracker variable is true. If it is, use the 2017 data set
-    if(clicked == true){
-        drawPoints(data2000);  //call the draw function again, to redraw the circles
-        clicked = false;       //reset the value of the tracker variable
-    }
-    else{   //if the tracker variable is not true, use the 2016 data set
-        drawPoints(data2016);
-        clicked = true;
-    }
+} //track the data updata function
+
+
+//this function runs when the HTML button is clicked.
+function sliderMoved(sliderValue){
+
+    console.log(sliderValue);
+
+    var newData = updateData(+sliderValue);
+
+    drawPoints(newData);
+
+
 
 
 
 }
+
+/*
+
+var year ="2000";
+setInterval(function(){
+    var newData = updateData(year);
+    drawPoints(newData);
+    if (year<2016){year++;}
+    else{year = 2000;}
+
+} ,1000 )
+
+*/
